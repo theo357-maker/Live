@@ -65,7 +65,7 @@ const auth=firebase.auth(),db=firebase.firestore();
 
 const RTC_CONFIG={
  iceCandidatePoolSize:10,
- bundlePolicy:"max-bundle",
+ bundlePolicy:"balanced",
  rtcpMuxPolicy:"require",
  iceServers:[
   {urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"]},
@@ -163,30 +163,45 @@ async function join(){
   if(data.professor?.online!==true)throw new Error("Le professeur n'est pas en direct.");
 
   pc=new RTCPeerConnection(RTC_CONFIG);
-  remoteStream=new MediaStream();
-  $("remoteVideo").srcObject=remoteStream;
 
-  pc.ontrack=async event=>{
-   console.log("🎥 TRACK REÇU :",event.track.kind);
+remoteStream=new MediaStream();
+$("remoteVideo").srcObject=remoteStream;
 
-   if(!remoteStream)remoteStream=new MediaStream();
-   if(!remoteStream.getTracks().some(t=>t.id===event.track.id))
-    remoteStream.addTrack(event.track);
+pc.ontrack=async event=>{
+    console.log("🎥 TRACK REÇU :",event.track.kind);
 
-   $("remoteVideo").srcObject=remoteStream;
-   $("playBtn").disabled=false;
-   $("soundBtn").disabled=false;
+    if(!remoteStream){
+        remoteStream=new MediaStream();
+    }
 
-   console.log("REMOTE TRACKS:",
-    remoteStream.getTracks().map(t=>({
-     kind:t.kind,enabled:t.enabled,readyState:t.readyState
-    }))
-   );
+    if(!remoteStream.getTracks().some(t=>t.id===event.track.id)){
+        remoteStream.addTrack(event.track);
+    }
 
-   const played=await playRemote();
-   if(played)status("🎥 Vidéo du professeur reçue.","ok");
-   else status("🎥 Flux reçu. Appuyez sur « Afficher la vidéo ».","wait");
-  };
+    $("remoteVideo").srcObject=remoteStream;
+
+    $("playBtn").disabled=false;
+    $("soundBtn").disabled=false;
+
+    console.log(
+        "REMOTE TRACKS:",
+        remoteStream.getTracks().map(t=>({
+            kind:t.kind,
+            enabled:t.enabled,
+            readyState:t.readyState
+        }))
+    );
+
+    const played=await playRemote();
+
+    if(played){
+        status("🎥 Vidéo du professeur reçue.","ok");
+    }else{
+        status(
+            "🎥 Flux reçu. Appuyez sur « Afficher la vidéo ».","wait"
+        );
+    }
+};
 
   pc.onicecandidate=e=>{
    if(!e.candidate)return;
@@ -256,12 +271,19 @@ async function join(){
    });
   });
 
-  const offer=await pc.createOffer({
-   offerToReceiveAudio:true,
-   offerToReceiveVideo:true
-  });
-  await pc.setLocalDescription(offer);
+  // On indique explicitement que l'étudiant veut RECEVOIR
+// l'audio et la vidéo du professeur.
+pc.addTransceiver("audio", {
+    direction: "recvonly"
+});
 
+pc.addTransceiver("video", {
+    direction: "recvonly"
+});
+
+const offer = await pc.createOffer();
+
+await pc.setLocalDescription(offer);
   await studentRef.set({
    name:user.displayName||"Étudiant",
    email:user.email||"",
