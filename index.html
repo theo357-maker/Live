@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📹 Professeur - Live Vidéo</title>
+    <style>
+        /* ========== STYLES COMPLETS ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* HEADER */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .badge {
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .badge-online {
+            background: #4ade80;
+            color: #1a1a2e;
+        }
+        
+        .badge-offline {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .badge-viewers {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        /* GRILLE PRINCIPALE */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        /* SECTION VIDÉO */
+        .video-section {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .video-section video {
+            width: 100%;
+            border-radius: 10px;
+            background: #1a1a2e;
+            min-height: 400px;
+            object-fit: cover;
+        }
+        
+        .video-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 18px;
+        }
+        
+        .video-placeholder .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .video-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* BOUTONS */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+            min-width: 120px;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn-primary {
+            background: #4ade80;
+            color: #1a1a2e;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #f59e0b;
+            color: #1a1a2e;
+        }
+        
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+        
+        /* PANEL LATÉRAL */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #1a1a2e;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .room-info {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        
+        .room-info input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: border 0.3s;
+        }
+        
+        .room-info input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .room-id-display {
+            background: #1e293b;
+            color: #4ade80;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .viewer-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .viewer-item {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .viewer-item .online {
+            color: #4ade80;
+            font-weight: bold;
+        }
+        
+        .viewer-empty {
+            color: #94a3b8;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        
+        /* STATUS BAR */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px 20px;
+            color: white;
+            margin-top: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .status-bar.error {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-bar.success {
+            background: rgba(74, 222, 128, 0.3);
+        }
+        
+        .status-bar.loading {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        /* PERMISSION PANEL */
+        .permission-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px 40px;
+            text-align: center;
+            max-width: 500px;
+            margin: 50px auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .permission-panel h2 {
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .permission-panel p {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .permission-panel .icon-big {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .permission-panel .btn {
+            font-size: 18px;
+            padding: 15px 40px;
+            min-width: 250px;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .video-controls .btn {
+                flex: 1;
+                min-width: 80px;
+                font-size: 14px;
+                padding: 10px 15px;
+            }
+            
+            .permission-panel {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+        }
+        
+        /* SCROLLBAR PERSONNALISÉE */
+        .viewer-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .viewer-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .viewer-list::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+        
+        /* ANIMATION DE CHARGEMENT */
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================ -->
+    <!-- HTML - INTERFACE COMPLÈTE                   -->
+    <!-- ============================================ -->
+    
+    <div id="app">
+        <!-- PANEL PERMISSION -->
+        <div id="permissionPanel" class="permission-panel">
+            <div class="icon-big">🎥</div>
+            <h2>Autorisation requise</h2>
+            <p>
+                Pour diffuser votre cours en direct, vous devez autoriser l'accès à votre <strong>caméra</strong> et à votre <strong>micro</strong>.
+                <br><br>
+                🔒 Cliquez sur le cadenas dans la barre d'adresse si vous devez modifier les permissions.
+            </p>
+            <button id="requestPermissionBtn" class="btn btn-primary">
+                🔓 Demander l'autorisation
+            </button>
+        </div>
+
+        <!-- INTERFACE PRINCIPALE -->
+        <div id="mainPanel" style="display:none;">
+            <div class="container">
+                <!-- HEADER -->
+                <div class="header">
+                    <h1>
+                        <span>📹</span> Professeur Live
+                    </h1>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <span class="badge badge-offline" id="statusBadge">🔴 Hors ligne</span>
+                        <span class="badge badge-viewers" id="viewerBadge">👁️ 0 spectateurs</span>
+                        <span class="badge" id="roomBadge" style="background:#8b5cf6; color:white;">🏷️ Aucune salle</span>
+                    </div>
+                </div>
+
+                <!-- GRILLE PRINCIPALE -->
+                <div class="main-grid">
+                    <!-- SECTION VIDÉO -->
+                    <div class="video-section">
+                        <video id="localVideo" autoplay playsinline muted style="display:none;"></video>
+                        <div id="videoPlaceholder" class="video-placeholder">
+                            <div class="icon">📷</div>
+                            <div>Caméra en attente</div>
+                            <div style="font-size:14px; margin-top:10px;">Démarrez le live pour commencer</div>
+                        </div>
+                        
+                        <div class="video-controls">
+                            <button id="startBtn" class="btn btn-primary">▶️ Démarrer</button>
+                            <button id="stopBtn" class="btn btn-danger" disabled>⏹️ Arrêter</button>
+                            <button id="toggleCameraBtn" class="btn btn-secondary">📷 Caméra</button>
+                            <button id="toggleMicBtn" class="btn btn-secondary">🎤 Micro</button>
+                            <button id="resetBtn" class="btn btn-warning" style="display:none;">🔄 Réinitialiser</button>
+                        </div>
+                    </div>
+
+                    <!-- PANEL LATÉRAL -->
+                    <div class="side-panel">
+                        <!-- CARTE SALLE -->
+                        <div class="card">
+                            <h3>🏷️ Salle de cours</h3>
+                            <div class="room-info">
+                                <input type="text" id="roomId" placeholder="Entrez un ID de salle" value="cours_demo">
+                                <button id="generateIdBtn" class="btn btn-secondary" style="font-size:14px; padding:8px 15px; flex:0;">
+                                    🎲 Générer un ID
+                                </button>
+                                <div class="room-id-display" id="roomIdDisplay" style="display:none;">
+                                    📋 ID: <span id="displayedRoomId"></span>
+                                </div>
+                                <small style="color:#64748b; display:block; margin-top:10px;">
+                                    💡 Donnez cet ID à vos étudiants pour qu'ils vous rejoignent
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- CARTE SPECTATEURS -->
+                        <div class="card">
+                            <h3>👥 Spectateurs connectés</h3>
+                            <div id="viewerList" class="viewer-list">
+                                <div class="viewer-empty">👀 Aucun spectateur connecté</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STATUS BAR -->
+                <div id="statusBar" class="status-bar">🔒 Prêt à démarrer</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- JAVASCRIPT - TOUT EN UN SEUL FICHIER        -->
+    <!-- ============================================ -->
+    
+    <!-- CHARGEMENT DES BIBLIOTHÈQUES FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // =============================================
+        // 1. CONFIGURATION FIREBASE
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXoNwKYj9GNgTSZr5wTWqIna6Cou33a98",
+            authDomain: "theovet-8323d.firebaseapp.com",
+            projectId: "theovet-8323d",
+            storageBucket: "theovet-8323d.firebasestorage.app",
+            messagingSenderId: "1007742031625",
+            appId: "1:1007742031625:web:3749c2ab333e7772c1a5d8",
+            databaseURL: "https://theovet-gestion-default-rtdb.firebaseio.com"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // =============================================
+        // 2. SERVEURS TURN/STUN
+        // =============================================
+        const TURN_SERVERS = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10
+        };
+
+        // =============================================
+        // 3. LOGIQUE PRINCIPALE
+        // =============================================
+        class LiveManager {
+            constructor() {
+                this.localStream = null;
+                this.peerConnections = new Map();
+                this.currentRoomId = null;
+                this.isProfessor = false;
+                this.viewerCount = 0;
+                this.cameraEnabled = true;
+                this.micEnabled = true;
+                this.roomRef = null;
+                this.viewersRef = null;
+                this.offersRef = null;
+                this.isLive = false;
+            }
+
+            async requestPermissions() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: 1280, height: 720 },
+                        audio: true
+                    });
+                    stream.getTracks().forEach(track => track.stop());
+                    return true;
+                } catch (err) {
+                    console.error('Permission error:', err);
+                    throw new Error('Permission caméra/micro refusée');
+                }
+            }
+
+            async startCamera() {
+                try {
+                    if (this.localStream) return true;
+                    
+                    this.localStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: 1280, height: 720 },
+                        audio: { echoCancellation: true, noiseSuppression: true }
+                    });
+                    
+                    return true;
+                } catch (err) {
+                    console.error('Camera error:', err);
+                    throw new Error('Impossible d\'accéder à la caméra');
+                }
+            }
+
+            async startLiveAsProfessor(roomId, onViewerUpdate) {
+                if (!roomId) throw new Error('ID de salle requis');
+                if (!this.localStream) await this.startCamera();
+
+                this.currentRoomId = roomId;
+                this.isProfessor = true;
+                this.isLive = true;
+
+                await auth.signInAnonymously();
+
+                this.roomRef = db.ref(`salles/${roomId}`);
+                this.roomRef.onDisconnect().remove();
+
+                await this.roomRef.set({
+                    professor: {
+                        online: true,
+                        startedAt: Date.now()
+                    },
+                    viewers: {},
+                    messages: {}
+                });
+
+                this.viewersRef = db.ref(`salles/${roomId}/viewers`);
+                this.viewersRef.on('value', (snapshot) => {
+                    const viewers = snapshot.val() || {};
+                    this.viewerCount = Object.keys(viewers).length;
+                    if (onViewerUpdate) onViewerUpdate(this.viewerCount, viewers);
+                });
+
+                this.offersRef = db.ref(`salles/${roomId}/offers`);
+                this.offersRef.on('value', (snapshot) => {
+                    const offers = snapshot.val() || {};
+                    Object.keys(offers).forEach(studentId => {
+                        if (!this.peerConnections.has(studentId)) {
+                            this.handleStudentOffer(studentId, offers[studentId]);
+                        }
+                    });
+                });
+
+                return true;
+            }
+
+            async handleStudentOffer(studentId, offerData) {
+                if (!this.localStream) return;
+
+                try {
+                    const pc = new RTCPeerConnection(TURN_SERVERS);
+                    this.peerConnections.set(studentId, pc);
+
+                    this.localStream.getTracks().forEach(track => {
+                        pc.addTrack(track, this.localStream);
+                    });
+
+                    pc.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            db.ref(`salles/${this.currentRoomId}/answers/${studentId}/candidates`)
+                                .set(JSON.stringify(event.candidate));
+                        }
+                    };
+
+                    await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+
+                    await db.ref(`salles/${this.currentRoomId}/answers/${studentId}`).set({
+                        sdp: answer.sdp,
+                        type: answer.type,
+                        timestamp: Date.now()
+                    });
+
+                    console.log(`✅ Étudiant ${studentId} connecté`);
+
+                } catch (err) {
+                    console.error('Erreur avec l\'étudiant:', err);
+                    this.peerConnections.delete(studentId);
+                }
+            }
+
+            async stopLive() {
+                try {
+                    for (const [id, pc] of this.peerConnections) {
+                        pc.close();
+                    }
+                    this.peerConnections.clear();
+
+                    if (this.localStream) {
+                        this.localStream.getTracks().forEach(t => t.stop());
+                        this.localStream = null;
+                    }
+
+                    if (this.isProfessor && this.currentRoomId) {
+                        await db.ref(`salles/${this.currentRoomId}`).remove();
+                    }
+
+                    if (this.viewersRef) {
+                        this.viewersRef.off();
+                        this.viewersRef = null;
+                    }
+                    if (this.offersRef) {
+                        this.offersRef.off();
+                        this.offersRef = null;
+                    }
+
+                    this.currentRoomId = null;
+                    this.isProfessor = false;
+                    this.isLive = false;
+                    this.viewerCount = 0;
+
+                    return true;
+                } catch (err) {
+                    console.error('Erreur arrêt:', err);
+                    throw err;
+                }
+            }
+
+            toggleCamera() {
+                if (!this.localStream) return false;
+                const videoTrack = this.localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    this.cameraEnabled = !this.cameraEnabled;
+                    videoTrack.enabled = this.cameraEnabled;
+                    return this.cameraEnabled;
+                }
+                return false;
+            }
+
+            toggleMic() {
+                if (!this.localStream) return false;
+                const audioTrack = this.localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    this.micEnabled = !this.micEnabled;
+                    audioTrack.enabled = this.micEnabled;
+                    return this.micEnabled;
+                }
+                return false;
+            }
+
+            cleanup() {
+                this.peerConnections.forEach(pc => pc.close());
+                this.peerConnections.clear();
+                if (this.localStream) {
+                    this.localStream.getTracks().forEach(t => t.stop());
+                }
+                if (this.roomRef && this.isProfessor) {
+                    this.roomRef.remove();
+                }
+                if (this.viewersRef) this.viewersRef.off();
+                if (this.offersRef) this.offersRef.off();
+            }
+        }
+
+        // =============================================
+        // 4. INITIALISATION DE L'INTERFACE
+        // =============================================
+        
+        // ÉLÉMENTS DOM
+        const permissionPanel = document.getElementById('permissionPanel');
+        const mainPanel = document.getElementById('mainPanel');
+        const requestPermissionBtn = document.getElementById('requestPermissionBtn');
+        const localVideo = document.getElementById('localVideo');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+        const toggleMicBtn = document.getElementById('toggleMicBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const roomIdInput = document.getElementById('roomId');
+        const roomIdDisplay = document.getElementById('roomIdDisplay');
+        const displayedRoomId = document.getElementById('displayedRoomId');
+        const roomBadge = document.getElementById('roomBadge');
+        const generateIdBtn = document.getElementById('generateIdBtn');
+        const statusBar = document.getElementById('statusBar');
+        const statusBadge = document.getElementById('statusBadge');
+        const viewerBadge = document.getElementById('viewerBadge');
+        const viewerList = document.getElementById('viewerList');
+
+        // INSTANCE DU MANAGER
+        const liveManager = new LiveManager();
+
+        // =============================================
+        // 5. FONCTIONS UTILITAIRES
+        // =============================================
+        
+        function setStatus(msg, type = 'info') {
+            statusBar.textContent = msg;
+            statusBar.className = 'status-bar';
+            if (type === 'error') statusBar.classList.add('error');
+            if (type === 'success') statusBar.classList.add('success');
+            if (type === 'loading') statusBar.classList.add('loading');
+            console.log(`[Status] ${msg}`);
+        }
+
+        function updateViewerList(viewers) {
+            const keys = Object.keys(viewers || {});
+            if (keys.length === 0) {
+                viewerList.innerHTML = '<div class="viewer-empty">👀 Aucun spectateur connecté</div>';
+                return;
+            }
+            viewerList.innerHTML = keys.map((id, index) => `
+                <div class="viewer-item">
+                    <span>👤 Spectateur #${index + 1}</span>
+                    <span class="online">🟢 Connecté</span>
+                </div>
+            `).join('');
+        }
+
+        function updateRoomDisplay(roomId) {
+            if (roomId) {
+                displayedRoomId.textContent = roomId;
+                roomIdDisplay.style.display = 'block';
+                roomBadge.textContent = `🏷️ Salle: ${roomId}`;
+                roomBadge.style.background = '#4ade80';
+                roomBadge.style.color = '#1a1a2e';
+            } else {
+                roomIdDisplay.style.display = 'none';
+                roomBadge.textContent = '🏷️ Aucune salle';
+                roomBadge.style.background = '#8b5cf6';
+                roomBadge.style.color = 'white';
+            }
+        }
+
+        function generateRoomId() {
+            const prefix = 'cours_';
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = prefix;
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // =============================================
+        // 6. GESTIONNAIRES D'ÉVÉNEMENTS
+        // =============================================
+        
+        // ✅ DEMANDE PERMISSION
+        requestPermissionBtn.onclick = async () => {
+            requestPermissionBtn.disabled = true;
+            requestPermissionBtn.textContent = '⏳ Vérification...';
+            
+            try {
+                await liveManager.requestPermissions();
+                permissionPanel.style.display = 'none';
+                mainPanel.style.display = 'block';
+                setStatus('✅ Permission accordée !', 'success');
+                
+                await liveManager.startCamera();
+                localVideo.srcObject = liveManager.localStream;
+                localVideo.style.display = 'block';
+                videoPlaceholder.style.display = 'none';
+                
+                requestPermissionBtn.textContent = '✅ Autorisé';
+                requestPermissionBtn.style.background = '#4ade80';
+            } catch (err) {
+                setStatus('❌ ' + err.message, 'error');
+                requestPermissionBtn.disabled = false;
+                requestPermissionBtn.textContent = '🔓 Demander l\'autorisation';
+            }
+        };
+
+        // ✅ GÉNÉRER ID
+        generateIdBtn.onclick = () => {
+            const newId = generateRoomId();
+            roomIdInput.value = newId;
+            updateRoomDisplay(newId);
+            setStatus(`🆔 Nouvel ID généré: ${newId}`, 'success');
+        };
+
+        // ✅ DÉMARRER LIVE
+        startBtn.onclick = async () => {
+            let roomId = roomIdInput.value.trim();
+            if (!roomId) {
+                roomId = generateRoomId();
+                roomIdInput.value = roomId;
+            }
+
+            startBtn.disabled = true;
+            startBtn.textContent = '⏳ Démarrage...';
+            setStatus('🎬 Démarrage du live...', 'loading');
+
+            try {
+                await liveManager.startLiveAsProfessor(roomId, (count, viewers) => {
+                    viewerBadge.textContent = `👁️ ${count} spectateurs`;
+                    updateViewerList(viewers);
+                });
+
+                updateRoomDisplay(roomId);
+                setStatus(`🎬 Live actif ! Salle: ${roomId}`, 'success');
+                statusBadge.className = 'badge badge-online';
+                statusBadge.textContent = '🟢 En direct';
+                
+                startBtn.disabled = true;
+                startBtn.textContent = '▶️ En direct';
+                startBtn.style.background = '#22c55e';
+                stopBtn.disabled = false;
+                resetBtn.style.display = 'inline-flex';
+                
+            } catch (err) {
+                setStatus('❌ ' + err.message, 'error');
+                startBtn.disabled = false;
+                startBtn.textContent = '▶️ Démarrer';
+                startBtn.style.background = '#4ade80';
+            }
+        };
+
+        // ✅ ARRÊTER LIVE
+        stopBtn.onclick = async () => {
+            stopBtn.disabled = true;
+            stopBtn.textContent = '⏳ Arrêt...';
+            setStatus('⏹️ Arrêt du live...', 'loading');
+
+            try {
+                await liveManager.stopLive();
+                
+                localVideo.srcObject = liveManager.localStream;
+                if (!liveManager.localStream) {
+                    localVideo.style.display = 'none';
+                    videoPlaceholder.style.display = 'flex';
+                }
+                
+                setStatus('⏹️ Live arrêté', 'success');
+                statusBadge.className = 'badge badge-offline';
+                statusBadge.textContent = '🔴 Hors ligne';
+                
+                startBtn.disabled = false;
+                startBtn.textContent = '▶️ Démarrer';
+                startBtn.style.background = '#4ade80';
+                stopBtn.disabled = true;
+                stopBtn.textContent = '⏹️ Arrêter';
+                resetBtn.style.display = 'none';
+                
+                viewerBadge.textContent = '👁️ 0 spectateurs';
+                viewerList.innerHTML = '<div class="viewer-empty">👀 Aucun spectateur connecté</div>';
+                updateRoomDisplay(null);
+                
+            } catch (err) {
+                setStatus('❌ ' + err.message, 'error');
+                stopBtn.disabled = false;
+                stopBtn.textContent = '⏹️ Arrêter';
+            }
+        };
+
+        // ✅ TOGGLE CAMÉRA
+        toggleCameraBtn.onclick = () => {
+            if (!liveManager.localStream) {
+                setStatus('⚠️ Démarrez le live d\'abord', 'error');
+                return;
+            }
+            const enabled = liveManager.toggleCamera();
+            toggleCameraBtn.textContent = enabled ? '📷 Caméra' : '📷 Caméra OFF';
+            toggleCameraBtn.style.background = enabled ? '#64748b' : '#ef4444';
+            setStatus(enabled ? '📷 Caméra activée' : '📷 Caméra coupée', 'success');
+        };
+
+        // ✅ TOGGLE MICRO
+        toggleMicBtn.onclick = () => {
+            if (!liveManager.localStream) {
+                setStatus('⚠️ Démarrez le live d\'abord', 'error');
+                return;
+            }
+            const enabled = liveManager.toggleMic();
+            toggleMicBtn.textContent = enabled ? '🎤 Micro' : '🎤 Micro OFF';
+            toggleMicBtn.style.background = enabled ? '#64748b' : '#ef4444';
+            setStatus(enabled ? '🎤 Micro activé' : '🎤 Micro coupé', 'success');
+        };
+
+        // ✅ RÉINITIALISER
+        resetBtn.onclick = async () => {
+            if (liveManager.isLive) {
+                await liveManager.stopLive();
+            }
+            liveManager.cleanup();
+            
+            localVideo.srcObject = null;
+            localVideo.style.display = 'none';
+            videoPlaceholder.style.display = 'flex';
+            
+            setStatus('🔄 Réinitialisé', 'success');
+            statusBadge.className = 'badge badge-offline';
+            statusBadge.textContent = '🔴 Hors ligne';
+            startBtn.disabled = false;
+            startBtn.textContent = '▶️ Démarrer';
+            startBtn.style.background = '#4ade80';
+            stopBtn.disabled = true;
+            stopBtn.textContent = '⏹️ Arrêter';
+            resetBtn.style.display = 'none';
+            viewerBadge.textContent = '👁️ 0 spectateurs';
+            viewerList.innerHTML = '<div class="viewer-empty">👀 Aucun spectateur connecté</div>';
+            updateRoomDisplay(null);
+            toggleCameraBtn.textContent = '📷 Caméra';
+            toggleCameraBtn.style.background = '#64748b';
+            toggleMicBtn.textContent = '🎤 Micro';
+            toggleMicBtn.style.background = '#64748b';
+        };
+
+        // ✅ VÉRIFICATION AU CHARGEMENT
+        window.onload = async () => {
+            try {
+                // Vérifier si la permission est déjà accordée
+                const hasPermission = await liveManager.requestPermissions();
+                if (hasPermission) {
+                    permissionPanel.style.display = 'none';
+                    mainPanel.style.display = 'block';
+                    setStatus('✅ Prêt à démarrer !', 'success');
+                    
+                    await liveManager.startCamera();
+                    localVideo.srcObject = liveManager.localStream;
+                    localVideo.style.display = 'block';
+                    videoPlaceholder.style.display = 'none';
+                    
+                    // Générer un ID par défaut
+                    roomIdInput.value = generateRoomId();
+                    updateRoomDisplay(roomIdInput.value);
+                }
+            } catch (e) {
+                // Permission pas encore accordée, on laisse le panneau visible
+                console.log('🔒 En attente de permission...');
+            }
+        };
+
+        // ✅ NETTOYAGE À LA FERMETURE
+        window.addEventListener('beforeunload', () => {
+            liveManager.cleanup();
+        });
+
+        // ✅ ENTER POUR DÉMARRER
+        roomIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !startBtn.disabled) {
+                startBtn.click();
+            }
+        });
+
+        console.log('🚀 Application Live prête !');
+        console.log('📋 Pour tester:');
+        console.log('1. Cliquez sur "Demander l\'autorisation"');
+        console.log('2. Autorisez la caméra et le micro');
+        console.log('3. Cliquez sur "Démarrer"');
+        console.log('4. Partagez l\'ID de la salle avec vos étudiants');
+    </script>
+</body>
+</html>
