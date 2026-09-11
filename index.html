@@ -3,56 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>🎓 Étudiant — Direct</title>
+<title>👨‍🏫 Professeur — Direct (LiveKit)</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#fff;padding:16px}
-.wrap{max-width:900px;margin:auto}.card{background:#182235;border:1px solid #334155;border-radius:18px;padding:18px;margin-bottom:16px}
+.wrap{max-width:1100px;margin:auto}.card{background:#182235;border:1px solid #334155;border-radius:18px;padding:18px;margin-bottom:16px}
 h1{margin:0 0 8px;font-size:24px}.muted{color:#94a3b8}.row{display:flex;gap:10px;flex-wrap:wrap}
 input,button{font:inherit;border-radius:10px;padding:12px 14px}input{flex:1;min-width:220px;background:#0b1220;color:#fff;border:1px solid #475569}
-button{border:0;font-weight:700;cursor:pointer;background:#2563eb;color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
-.danger{background:#dc2626}.gray{background:#475569}.green{background:#16a34a}
-video{width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;display:block;object-fit:contain}
+button{border:0;font-weight:700;cursor:pointer;background:#16a34a;color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
+.danger{background:#dc2626}.blue{background:#2563eb}.gray{background:#475569}.green{background:#16a34a}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}video{width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;object-fit:cover;display:block}
 .status{padding:12px;border-radius:10px;background:#243044;color:#cbd5e1;margin-top:12px}.ok{background:#12351f;color:#86efac}.err{background:#401b1b;color:#fca5a5}.wait{background:#3b2b0a;color:#fde68a}
-#app{display:none}.login{max-width:430px;margin:80px auto;text-align:center}.small{font-size:13px}
-.videoActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.student{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px;border-bottom:1px solid #334155}.student:last-child{border:0}.name{font-weight:700}.small{font-size:12px;color:#94a3b8}
+.login{max-width:430px;margin:80px auto;text-align:center}.empty{padding:25px;text-align:center;color:#64748b}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div id="login" class="card login">
-<h1>🎓 Espace Étudiant</h1>
-<p class="muted">Connectez-vous avec Google pour suivre un direct.</p>
+<h1>👨‍🏫 Espace Professeur</h1>
+<p class="muted">Connectez-vous pour lancer le direct.</p>
 <button id="loginBtn">🔑 Connexion Google</button>
 <div id="loginError" class="small"></div>
 </div>
 
-<div id="app" class="wrap">
+<div id="app" class="wrap" style="display:none">
 <div class="card">
-<h1>🎓 Direct de la classe</h1>
+<h1>👨‍🏫 Direct de la classe (LiveKit)</h1>
 <div id="user" class="muted"></div>
 </div>
 
 <div class="card">
 <div class="row">
-<input id="roomId" placeholder="ID de salle, ex: cours_test" autocomplete="off">
-<button id="joinBtn">▶️ Rejoindre</button>
-<button id="leaveBtn" class="danger" disabled>⏹️ Quitter</button>
+<input id="roomId" value="cours_test" placeholder="ID de salle">
+<button id="startBtn">▶️ Lancer le direct</button>
+<button id="stopBtn" class="danger" disabled>⏹️ Arrêter</button>
 </div>
-<div id="status" class="status">Entrez l'ID de la salle.</div>
+<div id="status" class="status">Prêt.</div>
 </div>
 
+<div class="grid">
 <div class="card">
-<video id="remoteVideo" autoplay playsinline webkit-playsinline muted></video>
-<div class="videoActions">
-<button id="playBtn" class="green" disabled>▶️ Afficher la vidéo</button>
-<button id="soundBtn" class="gray" disabled>🔊 Activer le son</button>
+<video id="localVideo" autoplay playsinline muted></video>
+<div class="row" style="margin-top:10px">
+<button id="cameraBtn" class="gray" disabled>📷 Caméra</button>
+<button id="micBtn" class="gray" disabled>🎤 Micro</button>
+<button id="switchBtn" class="blue" disabled>🔄 Retourner</button>
 </div>
-<p id="videoInfo" class="muted small">La vidéo du professeur apparaîtra ici après son acceptation.</p>
+</div>
+<div class="card">
+<h3>👥 Étudiants connectés</h3>
+<div id="students"><div class="empty">Aucun étudiant.</div></div>
+</div>
 </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 <script>
 const firebaseConfig={
  apiKey:"AIzaSyBn7VIddclO7KtrXb5sibCr9SjVLjOy-qI",
@@ -61,253 +68,214 @@ const firebaseConfig={
  appId:"1:269629842962:web:a80a12b04448fe1e595acb"
 };
 firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth(),db=firebase.firestore();
+const auth=firebase.auth();
 
-const RTC_CONFIG={
- iceCandidatePoolSize:10,
- bundlePolicy:"balanced",
- rtcpMuxPolicy:"require",
- iceServers:[
-  {urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"]},
-  {urls:"turn:openrelay.metered.ca:80",username:"openrelayproject",credential:"openrelayproject"},
-  {urls:"turn:openrelay.metered.ca:443",username:"openrelayproject",credential:"openrelayproject"},
-  {urls:"turn:openrelay.metered.ca:443?transport=tcp",username:"openrelayproject",credential:"openrelayproject"}
- ]
-};
+// ===== Configuration LiveKit =====
+const TOKEN_SERVER_ID = "theo-az31wf";
 
-let pc=null,roomId=null,uid=null,roomRef=null,studentRef=null;
-let unsubStudent=null,unsubProfCandidates=null;
-let remoteStream=null,candidateQueue=[],seenCandidates=new Set();
-let joining=false,approved=false,cleaning=false;
+let room = null;
+let isLive = false;
+let currentFacingMode = "user"; // "user" = selfie, "environment" = arrière
 
 const $=id=>document.getElementById(id);
 function status(m,t=""){ $("status").textContent=m;$("status").className="status "+t; }
 
-function resetVideo(){
- remoteStream=null;
- $("remoteVideo").srcObject=null;
- $("remoteVideo").muted=true;
- $("playBtn").disabled=true;
- $("soundBtn").disabled=true;
- $("videoInfo").textContent="La vidéo du professeur apparaîtra ici après son acceptation.";
+// ===== Obtention du token via le SDK LiveKit =====
+async function fetchToken(roomName) {
+    console.log("🔑 Demande de token pour la salle:", roomName);
+    const tokenSource = LivekitClient.TokenSource.sandboxTokenServer(TOKEN_SERVER_ID);
+    const { serverUrl, participantToken } = await tokenSource.fetch({ roomName });
+    console.log("✅ Token obtenu, serveur:", serverUrl);
+    return { token: participantToken, url: serverUrl };
 }
 
-async function playRemote(){
- const video=$("remoteVideo");
- if(!video.srcObject)return false;
- try{
-  await video.play();
-  $("playBtn").disabled=false;
-  $("videoInfo").textContent="🟢 Vidéo du professeur affichée.";
-  return true;
- }catch(e){
-  console.warn("Lecture vidéo bloquée:",e);
-  $("videoInfo").textContent="🎥 Flux reçu. Appuyez sur « Afficher la vidéo ».";
-  return false;
- }
+// ===== Basculer entre caméra avant / arrière =====
+async function switchCamera() {
+    if (!room) return;
+    
+    const target = currentFacingMode === "user" ? "environment" : "user";
+    console.log("🔄 Bascule vers caméra:", target);
+    status("🔄 Recherche d'une caméra " + (target === "user" ? "frontale" : "arrière") + "...", "wait");
+
+    try {
+        // Récupérer la liste des périphériques vidéo
+        const devices = await LivekitClient.Room.getLocalDevices('videoinput');
+        
+        if (!devices || devices.length === 0) {
+            status("⚠️ Aucune caméra détectée.", "err");
+            return;
+        }
+
+        console.log("📹 Caméras disponibles:", devices.map(d => d.label || d.deviceId));
+
+        // Essayer de trouver une caméra correspondant au facingMode souhaité
+        let targetDevice = null;
+
+        // D'abord, chercher par label (mots-clés courants)
+        const backKeywords = ["back", "rear", "arrière", "environment", "world"];
+        const frontKeywords = ["front", "face", "avant", "user", "selfie"];
+
+        for (const device of devices) {
+            const label = (device.label || "").toLowerCase();
+            if (target === "environment") {
+                if (backKeywords.some(k => label.includes(k))) {
+                    targetDevice = device;
+                    break;
+                }
+            } else {
+                if (frontKeywords.some(k => label.includes(k))) {
+                    targetDevice = device;
+                    break;
+                }
+            }
+        }
+
+        // Si on n'a pas trouvé par label, on prend le premier device différent de l'actuel
+        if (!targetDevice) {
+            const currentPub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
+            const currentDeviceId = currentPub?.track?.mediaStreamTrack?.getSettings()?.deviceId;
+            
+            targetDevice = devices.find(d => d.deviceId !== currentDeviceId);
+            if (!targetDevice) targetDevice = devices[0];
+        }
+
+        console.log("🎯 Caméra cible:", targetDevice.label || targetDevice.deviceId);
+
+        // Utiliser la méthode du SDK LiveKit pour changer de caméra
+        await room.switchActiveDevice('videoinput', targetDevice.deviceId);
+        
+        currentFacingMode = target;
+        status("🟢 Caméra basculée vers : " + (target === "user" ? "Selfie" : "Arrière"), "ok");
+        
+        // Mettre à jour le texte du bouton
+        $("switchBtn").textContent = target === "user" ? "🔄 Passer à l'arrière" : "🔄 Passer au selfie";
+
+    } catch (e) {
+        console.error("❌ Erreur switchCamera:", e);
+        status("❌ Impossible de basculer : " + e.message, "err");
+    }
 }
 
-async function addQueuedCandidates(){
- if(!pc?.remoteDescription)return;
- const q=[...candidateQueue];candidateQueue=[];
- for(const c of q){
-  try{await pc.addIceCandidate(new RTCIceCandidate(c));}
-  catch(e){console.warn("ICE professeur:",e);}
- }
-}
+async function startLive(){
+ if(isLive) return;
+ const id = $("roomId").value.trim();
+ if(!id) throw new Error("ID de salle requis.");
+ const user = auth.currentUser;
+ if(!user) throw new Error("Vous devez être connecté.");
 
-async function leave(clearUI=true){
- cleaning=true;
- if(unsubStudent){unsubStudent();unsubStudent=null;}
- if(unsubProfCandidates){unsubProfCandidates();unsubProfCandidates=null;}
- candidateQueue=[];seenCandidates.clear();
+ status("🔄 Demande de token LiveKit...", "wait");
 
- if(pc){try{pc.ontrack=null;pc.onicecandidate=null;pc.close()}catch(e){}pc=null;}
+ try {
+   // 1. Récupérer le token
+   const { token, url } = await fetchToken(id);
 
- if(roomRef&&uid){
-  try{
-   await roomRef.collection("students").doc(uid).delete();
-  }catch(e){console.warn("Suppression demande:",e);}
- }
-
- roomId=null;uid=null;roomRef=null;studentRef=null;approved=false;
- resetVideo();
-
- if(clearUI){
-  $("joinBtn").disabled=false;
-  $("leaveBtn").disabled=true;
-  status("Vous avez quitté le direct.");
- }
- cleaning=false;
-}
-
-async function join(){
- if(joining)return;
- const id=$("roomId").value.trim();
- const user=auth.currentUser;
- if(!id)return status("❌ Entrez un ID de salle.","err");
- if(!user)return;
-
- joining=true;
- $("joinBtn").disabled=true;
-
- try{
-  await leave(false);
-
-  roomId=id;uid=user.uid;
-  roomRef=db.collection("salles").doc(roomId);
-  const room=await roomRef.get();
-
-  if(!room.exists)throw new Error("Cette salle n'existe pas.");
-  const data=room.data();
-  if(data.professor?.online!==true)throw new Error("Le professeur n'est pas en direct.");
-
-  pc=new RTCPeerConnection(RTC_CONFIG);
-
-remoteStream=new MediaStream();
-$("remoteVideo").srcObject=remoteStream;
-
-pc.ontrack=async event=>{
-    console.log("🎥 TRACK REÇU :",event.track.kind);
-
-    if(!remoteStream){
-        remoteStream=new MediaStream();
-    }
-
-    if(!remoteStream.getTracks().some(t=>t.id===event.track.id)){
-        remoteStream.addTrack(event.track);
-    }
-
-    $("remoteVideo").srcObject=remoteStream;
-
-    $("playBtn").disabled=false;
-    $("soundBtn").disabled=false;
-
-    console.log(
-        "REMOTE TRACKS:",
-        remoteStream.getTracks().map(t=>({
-            kind:t.kind,
-            enabled:t.enabled,
-            readyState:t.readyState
-        }))
-    );
-
-    const played=await playRemote();
-
-    if(played){
-        status("🎥 Vidéo du professeur reçue.","ok");
-    }else{
-        status(
-            "🎥 Flux reçu. Appuyez sur « Afficher la vidéo ».","wait"
-        );
-    }
-};
-
-  pc.onicecandidate=e=>{
-   if(!e.candidate)return;
-   roomRef.collection("students").doc(uid)
-   .collection("candidates").add(e.candidate.toJSON())
-   .catch(e=>console.warn("ICE étudiant:",e));
-  };
-
-  pc.oniceconnectionstatechange=()=>{
-   const s=pc?.iceConnectionState;
-   console.log("Étudiant ICE:",s);
-   if(s==="checking")status("🔄 Recherche d'une connexion vidéo...","wait");
-   if(s==="connected"||s==="completed")status("🟢 Connexion WebRTC établie.","ok");
-   if(s==="disconnected")status("⚠️ Connexion vidéo interrompue, tentative de récupération...","wait");
-   if(s==="failed")status("❌ WebRTC n'a pas réussi à traverser le réseau. Le serveur TURN/réseau doit être disponible.","err");
-  };
-
-  pc.onconnectionstatechange=()=>{
-   const s=pc?.connectionState;
-   console.log("Étudiant PC:",s);
-   if(s==="connected")status("🟢 Direct connecté.","ok");
-   if(s==="failed")status("❌ Connexion WebRTC échouée.","err");
-  };
-
-  studentRef=roomRef.collection("students").doc(uid);
-
-  // Les listeners sont installés AVANT l'offre.
-  unsubStudent=studentRef.onSnapshot(async doc=>{
-   if(!pc||!doc.exists||cleaning)return;
-   const d=doc.data();
-
-   if(d.rejected===true){
-    status("❌ Votre demande a été refusée.","err");
-    return;
-   }
-
-   if(d.approved===true&&!approved){
-    approved=true;
-    status("✅ Demande acceptée. Établissement de la vidéo...","wait");
-   }
-
-   if(d.answer?.sdp&&!pc.currentRemoteDescription){
-    try{
-     await pc.setRemoteDescription(new RTCSessionDescription(d.answer));
-     await addQueuedCandidates();
-     status("🔄 Réponse reçue. Connexion au flux...","wait");
-    }catch(e){
-     console.error("setRemoteDescription:",e);
-     status("❌ Impossible d'appliquer la réponse vidéo.","err");
-    }
-   }
-  });
-
-  unsubProfCandidates=studentRef.collection("profCandidates").onSnapshot(snap=>{
-   snap.docChanges().forEach(ch=>{
-    if(ch.type!=="added"||!pc)return;
-    const c=ch.doc.data();
-    const key=JSON.stringify(c);
-    if(seenCandidates.has(key))return;
-    seenCandidates.add(key);
-
-    if(pc.remoteDescription){
-     pc.addIceCandidate(new RTCIceCandidate(c)).catch(e=>console.warn("ICE professeur:",e));
-    }else{
-     candidateQueue.push(c);
-    }
+   // 2. Créer la salle
+   room = new LivekitClient.Room({
+     adaptiveStream: true,
+     dynacast: true,
    });
-  });
 
-  // On indique explicitement que l'étudiant veut RECEVOIR
-// l'audio et la vidéo du professeur.
-pc.addTransceiver("audio", {
-    direction: "recvonly"
-});
+   // 3. Écouter les participants
+   room.on(LivekitClient.RoomEvent.ParticipantConnected, (participant) => {
+     console.log("👤 Étudiant connecté:", participant.identity);
+     updateStudentsList();
+   });
 
-pc.addTransceiver("video", {
-    direction: "recvonly"
-});
+   room.on(LivekitClient.RoomEvent.ParticipantDisconnected, (participant) => {
+     console.log("👤 Étudiant déconnecté:", participant.identity);
+     updateStudentsList();
+   });
 
-const offer = await pc.createOffer();
+   room.on(LivekitClient.RoomEvent.Disconnected, () => {
+     console.log("🔌 Déconnecté de LiveKit");
+     if (isLive) status("⚠️ Connexion LiveKit perdue.", "err");
+   });
 
-await pc.setLocalDescription(offer);
-  await studentRef.set({
-   name:user.displayName||"Étudiant",
-   email:user.email||"",
-   uid:user.uid,
-   joinedAt:firebase.firestore.FieldValue.serverTimestamp(),
-   approved:false,
-   rejected:false,
-   offer:{
-    type:pc.localDescription.type,
-    sdp:pc.localDescription.sdp
+   // 4. Se connecter
+   status("🔄 Connexion à la salle LiveKit...", "wait");
+   await room.connect(url, token);
+   console.log("✅ Connecté à la salle");
+
+   // 5. Activer caméra et micro
+   await room.localParticipant.enableCameraAndMicrophone();
+   console.log("✅ Caméra et micro activés");
+
+   // 6. Afficher la vidéo locale
+   const videoEl = $("localVideo");
+   const camPub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
+   if (camPub && camPub.track) {
+     camPub.track.attach(videoEl);
    }
-  },{merge:true});
 
-  status("⏳ Demande envoyée. Attente de l'acceptation du professeur...","wait");
-  $("leaveBtn").disabled=false;
- }catch(e){
-  console.error(e);
-  status("❌ "+(e.message||"Erreur inconnue"),"err");
-  await leave(false);
-  $("joinBtn").disabled=false;
-  $("leaveBtn").disabled=true;
- }finally{
-  joining=false;
+   // Réattacher si de nouvelles pistes sont publiées
+   room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => {
+     if (pub.source === LivekitClient.Track.Source.Camera && pub.track) {
+       pub.track.attach(videoEl);
+     }
+   });
+
+   isLive = true;
+   $("startBtn").disabled = true;
+   $("stopBtn").disabled = false;
+   $("cameraBtn").disabled = false;
+   $("micBtn").disabled = false;
+   $("switchBtn").disabled = false;
+   status("🟢 DIRECT LANCÉ — Salle : " + id, "ok");
+   updateStudentsList();
+
+ } catch(e) {
+   console.error("❌ Erreur startLive:", e);
+   status("❌ " + (e.message || "Erreur inconnue"), "err");
+   if(room) { try{ await room.disconnect(); }catch(_){} room = null; }
+   $("startBtn").disabled = false;
+   $("stopBtn").disabled = true;
+   $("switchBtn").disabled = true;
  }
+}
+
+function updateStudentsList(){
+  if(!room){
+    $("students").innerHTML='<div class="empty">Aucun étudiant.</div>';
+    return;
+  }
+  const participants = Array.from(room.remoteParticipants.values());
+  if(!participants.length){
+    $("students").innerHTML='<div class="empty">Aucun étudiant.</div>';
+    return;
+  }
+  $("students").innerHTML = participants.map(p => `
+    <div class="student">
+      <div>
+        <div class="name">${p.identity || "Étudiant"}</div>
+        <div class="small">${p.name || ""}</div>
+      </div>
+      <div>🟢</div>
+    </div>
+  `).join('');
+}
+
+async function stopLive(){
+ if(!room && !isLive) return;
+ status("⏹️ Arrêt en cours...", "wait");
+
+ if(room){
+   try { await room.disconnect(); } catch(e){ console.warn(e); }
+   room = null;
+ }
+
+ isLive = false;
+ $("localVideo").srcObject = null;
+ $("startBtn").disabled = false;
+ $("stopBtn").disabled = true;
+ $("cameraBtn").disabled = true;
+ $("micBtn").disabled = true;
+ $("switchBtn").disabled = true;
+ $("cameraBtn").textContent = "📷 Caméra";
+ $("micBtn").textContent = "🎤 Micro";
+ $("switchBtn").textContent = "🔄 Retourner";
+ currentFacingMode = "user";
+ $("students").innerHTML='<div class="empty">Aucun étudiant.</div>';
+ status("⏹️ Direct arrêté.");
 }
 
 $("loginBtn").onclick=async()=>{
@@ -318,47 +286,39 @@ $("loginBtn").onclick=async()=>{
  }catch(e){$("loginError").textContent="❌ "+e.message;}
 };
 
-$("joinBtn").onclick=join;
-$("leaveBtn").onclick=()=>leave(true);
+$("startBtn").onclick=async()=>{try{await startLive()}catch(e){console.error(e);status("❌ "+e.message,"err")}};
+$("stopBtn").onclick=stopLive;
 
-$("playBtn").onclick=async()=>{
- const ok=await playRemote();
- if(ok)status("🟢 Vidéo affichée.","ok");
+$("cameraBtn").onclick=()=>{
+ if(!room) return;
+ const pub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
+ if(pub && pub.track){
+   pub.track.enabled = !pub.track.enabled;
+   $("cameraBtn").textContent = pub.track.enabled ? "📷 Caméra" : "📷 Caméra OFF";
+ }
 };
-
-$("soundBtn").onclick=async()=>{
- const video=$("remoteVideo");
- if(!video.srcObject)return;
- video.muted=false;
- try{
-  await video.play();
-  $("soundBtn").textContent="🔊 Son activé";
-  status("🔊 Son du professeur activé.","ok");
- }catch(e){
-  video.muted=true;
-  status("⚠️ iPhone a bloqué le son. Appuyez encore une fois.","wait");
+$("micBtn").onclick=()=>{
+ if(!room) return;
+ const pub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Microphone);
+ if(pub && pub.track){
+   pub.track.enabled = !pub.track.enabled;
+   $("micBtn").textContent = pub.track.enabled ? "🎤 Micro" : "🎤 Micro OFF";
  }
 };
 
-$("remoteVideo").addEventListener("click",async()=>{
- await playRemote();
-});
+$("switchBtn").onclick=switchCamera;
 
 auth.onAuthStateChanged(u=>{
  if(u){
-  $("login").style.display="none";
-  $("app").style.display="block";
+  $("login").style.display="none";$("app").style.display="block";
   $("user").textContent=`Connecté : ${u.displayName||u.email}`;
  }else{
-  $("login").style.display="block";
-  $("app").style.display="none";
+  $("login").style.display="block";$("app").style.display="none";
  }
 });
 
 window.addEventListener("pagehide",()=>{
- if(unsubStudent){unsubStudent();unsubStudent=null;}
- if(unsubProfCandidates){unsubProfCandidates();unsubProfCandidates=null;}
- if(pc){try{pc.close()}catch(e){}pc=null;}
+ if(room){ try{ room.disconnect(); }catch(e){} }
 });
 </script>
 </body>
