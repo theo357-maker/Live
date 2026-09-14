@@ -75,11 +75,13 @@ button{outline:none !important;}
   background:#000;
 }
 
+/* Scène vidéo : contient la vidéo prof + toutes les vidéos étudiants */
 #stage{
   position:absolute; inset:0;
   overflow:hidden;
 }
 
+/* Chaque vidéo plein écran est superposée, on en affiche une à la fois */
 .video-layer{
   position:absolute; inset:0;
   width:100%; height:100%;
@@ -89,6 +91,7 @@ button{outline:none !important;}
 }
 .video-layer.active{display:block;}
 
+/* La vidéo du prof */
 #video-prof{ z-index:1; }
 
 .video-overlay{
@@ -271,17 +274,6 @@ button{outline:none !important;}
   border-color:var(--app-success);
   box-shadow:0 0 0 2px var(--app-success),0 12px 32px rgba(34,197,94,.35);
 }
-.student-tile.pending{
-  border-color:#f59e0b !important;
-  box-shadow:0 0 0 2px #f59e0b,0 8px 25px rgba(251,191,36,.35) !important;
-}
-.student-tile.pending::after{
-  content:"En attente";
-  position:absolute; top:5px; left:5px;
-  padding:2px 7px; border-radius:6px;
-  background:rgba(251,191,36,.95); color:#000;
-  font-size:9px; font-weight:700;
-}
 .student-tile video{
   width:100%; height:100%;
   object-fit:cover; display:block;
@@ -356,7 +348,6 @@ button{outline:none !important;}
 .panel.show{display:block;}
 #participantsPanel{right:18px;}
 #settingsPanel{left:18px;}
-#requestsPanel{right:18px; border-color:rgba(251,191,36,.4);}
 .panel-header{
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom:16px;
@@ -442,67 +433,6 @@ button{outline:none !important;}
 .apply-room{background:var(--app-primary); color:#fff;}
 .close-settings{background:#263244; color:#fff;}
 
-/* DEMANDES CAMÉRA */
-#requestsBtn{
-  position:absolute;
-  z-index:119;
-  top:88px; right:18px;
-  padding:10px 16px; border-radius:14px;
-  background:linear-gradient(145deg,#f59e0b,#ef3340);
-  color:#fff; border:0;
-  font-size:12px; font-weight:700;
-  display:none; align-items:center; gap:7px;
-  box-shadow:0 8px 24px rgba(251,191,36,.4);
-  cursor:pointer;
-  transition:transform .15s,filter .15s;
-  backdrop-filter:blur(14px);
-}
-#requestsBtn:hover{filter:brightness(1.1);}
-#requestsBtn:active{transform:scale(.96);}
-#requestsBtn.show{display:flex;}
-#requestsBadge{
-  min-width:20px; height:20px;
-  padding:0 6px;
-  border-radius:10px;
-  background:#fff; color:#ef3340;
-  font-size:11px; font-weight:700;
-  display:flex; align-items:center; justify-content:center;
-  animation:pulseBadge 1.5s infinite;
-}
-@keyframes pulseBadge{
-  0%,100%{transform:scale(1);}
-  50%{transform:scale(1.12);}
-}
-
-.request-row{
-  display:flex; align-items:center; gap:10px;
-  padding:11px 0;
-  border-bottom:1px solid rgba(255,255,255,.08);
-}
-.request-row:last-child{border-bottom:0;}
-.request-avatar{
-  width:38px; height:38px; flex:0 0 38px;
-  display:flex; align-items:center; justify-content:center;
-  border-radius:50%;
-  background:linear-gradient(145deg,#f59e0b,#ef3340);
-  font-size:13px; font-weight:700; color:#fff;
-}
-.request-name{
-  flex:1; min-width:0; font-size:13px; font-weight:600;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.request-actions{display:flex; gap:6px;}
-.req-btn{
-  padding:8px 12px; border-radius:10px; border:0;
-  font-size:12px; font-weight:700; cursor:pointer;
-  display:flex; align-items:center; gap:5px;
-  transition:filter .15s,transform .15s;
-}
-.req-btn:hover{filter:brightness(1.1);}
-.req-btn:active{transform:scale(.95);}
-.req-accept{background:#22c55e; color:#fff;}
-.req-refuse{background:#475569; color:#fff;}
-
 /* CONTROLS */
 .bottom-area{
   position:absolute; left:0; right:0; bottom:0;
@@ -574,7 +504,6 @@ button{outline:none !important;}
   .students-grid-counter{bottom:98px;}
   #backToProfBtn{top:80px; left:14px; padding:8px 13px; font-size:12px;}
   .main-label{top:80px;}
-  #requestsBtn{top:80px; right:14px; padding:8px 12px; font-size:11px;}
 }
 @media(max-width:380px){
   .controls{gap:8px;}
@@ -592,7 +521,6 @@ button{outline:none !important;}
   .students-grid-counter{bottom:82px;}
   #backToProfBtn{top:62px; padding:7px 12px; font-size:11px;}
   .main-label{top:62px; padding:6px 12px; font-size:11px;}
-  #requestsBtn{top:62px; padding:7px 11px; font-size:11px;}
   .bottom-area{padding:8px 15px 12px;}
   .participants-shortcut{margin-bottom:7px;}
   .control{width:46px; height:46px; font-size:17px;}
@@ -624,35 +552,43 @@ button{outline:none !important;}
 <!-- APPLICATION -->
 <div id="app" class="not-live">
 
+  <!-- Scène : contient la vidéo prof + toutes les vidéos étudiants plein écran -->
   <div id="stage">
     <video id="video-prof" class="video-layer active" autoplay playsinline muted></video>
+    <!-- les vidéos étudiants seront ajoutées dynamiquement ici -->
   </div>
 
   <div class="video-overlay"></div>
 
+  <!-- ÉCRAN AVANT DIRECT -->
   <div id="startOverlay">
     <div class="camera-icon"><i class="bi bi-camera-video"></i></div>
     <h2>Votre cours en direct</h2>
     <p>Appuyez sur <i class="bi bi-play-fill"></i> pour démarrer la caméra et le micro.</p>
   </div>
 
+  <!-- BADGE : qui est en grand -->
   <div id="mainLabel" class="main-label">
     <i class="bi bi-person-fill"></i>
     <span id="mainLabelText">Vous</span>
   </div>
 
+  <!-- BOUTON RETOUR AU PROF -->
   <button id="backToProfBtn">
     <i class="bi bi-arrow-left"></i>
     Retour au prof
   </button>
 
+  <!-- COMPTEUR DE VIGNETTES -->
   <div id="studentsGridCounter" class="students-grid-counter">
     <i class="bi bi-people-fill"></i>
     <span id="gridCounterText">0 étudiant</span>
   </div>
 
+  <!-- GRILLE DES ÉTUDIANTS (cliquables) -->
   <div id="studentsGrid" class="students-grid"></div>
 
+  <!-- BARRE SUPÉRIEURE -->
   <div class="top-bar">
     <div class="top-left">
       <div class="profile-avatar"><i class="bi bi-person-fill"></i></div>
@@ -672,28 +608,8 @@ button{outline:none !important;}
     </div>
   </div>
 
+  <!-- STATUT -->
   <div id="status" class="status"></div>
-
-  <!-- BOUTON DEMANDES CAMÉRA -->
-  <button id="requestsBtn">
-    <i class="bi bi-hand-index-thumb-fill"></i>
-    <span>Demandes caméra</span>
-    <span id="requestsBadge">0</span>
-  </button>
-
-  <!-- PANEL DEMANDES CAMÉRA -->
-  <div id="requestsPanel" class="panel">
-    <div class="panel-header">
-      <div class="panel-title">
-        <i class="bi bi-hand-index-thumb-fill" style="color:#fbbf24;"></i>
-        Demandes d'accès caméra
-      </div>
-      <button id="closeRequestsBtn" class="close-button"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <div id="requestsList">
-      <div class="empty"><i class="bi bi-inbox"></i>Aucune demande en attente.</div>
-    </div>
-  </div>
 
   <!-- PANEL SALLE -->
   <div id="settingsPanel" class="panel">
@@ -764,6 +680,7 @@ button{outline:none !important;}
 
 </div>
 
+<!-- SCRIPTS -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
@@ -793,13 +710,11 @@ let room=null;
 let isLive=false;
 let currentFacingMode="user";
 
+// Chaque item = { uid, tile, videoTile, videoFull, videoTrack, audioTrack, participant }
 let studentItems=[];
-let selectedStudentUid=null;
-let localCameraTrack=null;
+let selectedStudentUid=null;  // null => prof affiché en grand
 
-// Demandes caméra
-let pendingRequests = new Map();   // uid -> { name, participant }
-let allowedCameraUids = new Set(); // uids autorisés à publier leur caméra
+let localCameraTrack=null;
 
 const $=id=>document.getElementById(id);
 
@@ -836,22 +751,33 @@ async function fetchToken(roomName){
 
 /* =========================================================
    AFFICHAGE EN GRAND
+   -----------------------------------------------------------
+   Principe : CHAQUE participant (prof + étudiants) possède
+   sa propre <video> plein écran dans #stage. On ne fait que
+   basculer la classe .active : AUCUN detach/attach.
    ========================================================= */
+
 function showProfInMain(){
   selectedStudentUid=null;
 
+  // Cacher toutes les vidéos étudiantes plein écran
   document.querySelectorAll("#stage .video-layer.student").forEach(v=>{
     v.classList.remove("active");
   });
 
+  // Afficher la vidéo du prof
   $("video-prof").classList.add("active");
+
+  // Cacher le bouton retour
   $("backToProfBtn").classList.remove("show");
 
+  // Badge
   const label=$("mainLabel");
   label.classList.remove("student");
   label.classList.add("show");
   $("mainLabelText").textContent="Vous (professeur)";
 
+  // Retirer la classe active des vignettes
   document.querySelectorAll(".student-tile.active").forEach(t=>t.classList.remove("active"));
 }
 
@@ -864,35 +790,50 @@ function showStudentInMain(uid){
 
   selectedStudentUid=uid;
 
+  // Cacher la vidéo prof + toutes les autres vidéos étudiantes
   $("video-prof").classList.remove("active");
   document.querySelectorAll("#stage .video-layer.student").forEach(v=>{
     v.classList.remove("active");
   });
 
+  // Afficher la vidéo plein écran de cet étudiant
   item.videoFull.classList.add("active");
+
+  // Afficher le bouton retour
   $("backToProfBtn").classList.add("show");
 
+  // Badge
   const label=$("mainLabel");
   label.classList.add("student");
   label.classList.add("show");
   $("mainLabelText").textContent=
     item.participant.name || item.participant.identity || "Étudiant";
 
+  // Marquer la vignette comme active
   document.querySelectorAll(".student-tile.active").forEach(t=>t.classList.remove("active"));
   item.tile.classList.add("active");
 
+  // S'assurer que la vidéo plein écran joue
   item.videoFull.play().catch(()=>{});
 
   status("Vous regardez : "+(item.participant.name||item.participant.identity),"ok");
 }
 
 /* =========================================================
-   VIGNETTES ÉTUDIANTS
+   GESTION DES VIGNETTES ÉTUDIANTS
+   -----------------------------------------------------------
+   À chaque étudiant :
+     - une <video> dans la vignette (petite)
+     - une <video> dans #stage (plein écran, cachée)
+   Les deux <video> reçoivent la MÊME piste via LiveKit (attach
+   gère plusieurs éléments correctement en parallèle, c'est une
+   fonctionnalité officielle).
    ========================================================= */
 function createStudentTile(participant, videoTrack){
   const uid=participant.identity;
   if(document.getElementById("tile-"+uid)) return;
 
+  // ---- Vignette ----
   const tile=document.createElement("div");
   tile.className="student-tile";
   tile.id="tile-"+uid;
@@ -928,13 +869,15 @@ function createStudentTile(participant, videoTrack){
 
   document.getElementById("studentsGrid").appendChild(tile);
 
+  // ---- Vidéo plein écran dans #stage ----
   const videoFull=document.createElement("video");
   videoFull.className="video-layer student";
   videoFull.autoplay=true;
   videoFull.playsInline=true;
-  videoFull.muted=false;
+  videoFull.muted=false;   // l'audio vient d'une <audio> séparée, mais on garde cohérent
   document.getElementById("stage").appendChild(videoFull);
 
+  // ---- Attacher la piste aux DEUX éléments ----
   videoTrack.attach(videoTile);
   videoTrack.attach(videoFull);
 
@@ -972,6 +915,9 @@ function removeStudentTile(uid){
   enforceVisibleLimit();
 }
 
+/* =========================================================
+   LIMITE VISIBLE + BAISSE DE QUALITÉ DES VIGNETTES CACHÉES
+   ========================================================= */
 function enforceVisibleLimit(){
   const counter=$("studentsGridCounter");
   const counterText=$("gridCounterText");
@@ -989,105 +935,15 @@ function enforceVisibleLimit(){
     const visible=index<MAX_VISIBLE_STUDENTS;
     item.tile.style.display=visible?"block":"none";
 
+    // Réduire la qualité vidéo des participants non visibles
+    // (économise CPU / bande passante sur le prof)
     if(item.participant && typeof item.participant.setVideoQuality === "function"){
-      try{ item.participant.setVideoQuality(visible?"h":"l"); }catch(e){}
+      try{
+        // "l" = low, "m" = medium, "h" = high
+        item.participant.setVideoQuality(visible?"h":"l");
+      }catch(e){}
     }
   });
-}
-
-/* =========================================================
-   DEMANDES CAMÉRA
-   ========================================================= */
-function renderRequests(){
-  const listEl=$("requestsList");
-  const btn=$("requestsBtn");
-  const badge=$("requestsBadge");
-
-  const count=pendingRequests.size;
-
-  if(count===0){
-    listEl.innerHTML='<div class="empty"><i class="bi bi-inbox"></i>Aucune demande en attente.</div>';
-    btn.classList.remove("show");
-    $("requestsPanel").classList.remove("show");
-    return;
-  }
-
-  btn.classList.add("show");
-  badge.textContent=count;
-
-  listEl.innerHTML=Array.from(pendingRequests.entries()).map(([uid,data])=>{
-    const name=data.name||uid;
-    return `
-      <div class="request-row">
-        <div class="request-avatar">${escapeHTML(name.charAt(0).toUpperCase())}</div>
-        <div class="request-name">${escapeHTML(name)}</div>
-        <div class="request-actions">
-          <button class="req-btn req-accept" data-uid="${escapeHTML(uid)}" data-action="accept">
-            <i class="bi bi-check-lg"></i> Accepter
-          </button>
-          <button class="req-btn req-refuse" data-uid="${escapeHTML(uid)}" data-action="refuse">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  // Brancher les boutons
-  listEl.querySelectorAll(".req-btn").forEach(b=>{
-    b.onclick=()=>{
-      const uid=b.dataset.uid;
-      if(b.dataset.action==="accept") acceptRequest(uid);
-      else refuseRequest(uid);
-    };
-  });
-}
-
-async function sendCameraDecision(uid,granted){
-  if(!room) return;
-  const payload=new TextEncoder().encode(JSON.stringify({
-    type:"camera-decision",
-    granted:granted
-  }));
-
-  try{
-    await room.localParticipant.publishData(payload,{
-      reliable:true,
-      destinationIdentities:[uid]
-    });
-    console.log("Décision envoyée à",uid,":",granted?"accepté":"refusé");
-  }catch(e){
-    console.error("Envoi décision échoué:",e);
-  }
-}
-
-async function acceptRequest(uid){
-  const req=pendingRequests.get(uid);
-  if(!req) return;
-
-  allowedCameraUids.add(uid);
-  pendingRequests.delete(uid);
-  renderRequests();
-
-  const tile=document.getElementById("tile-"+uid);
-  if(tile) tile.classList.remove("pending");
-
-  await sendCameraDecision(uid,true);
-  status("Accès caméra accordé à "+(req.name||uid),"ok");
-}
-
-async function refuseRequest(uid){
-  const req=pendingRequests.get(uid);
-  if(!req) return;
-
-  pendingRequests.delete(uid);
-  renderRequests();
-
-  const tile=document.getElementById("tile-"+uid);
-  if(tile) tile.classList.remove("pending");
-
-  await sendCameraDecision(uid,false);
-  status("Accès caméra refusé à "+(req.name||uid));
 }
 
 /* =========================================================
@@ -1136,9 +992,6 @@ async function startLive(){
       console.log("Étudiant déconnecté:",participant.identity);
       removeStudentTile(participant.identity);
       updateStudentsList();
-      pendingRequests.delete(participant.identity);
-      allowedCameraUids.delete(participant.identity);
-      renderRequests();
     });
 
     room.on(LivekitClient.RoomEvent.Disconnected,()=>{
@@ -1151,45 +1004,11 @@ async function startLive(){
       }
     });
 
+    /* PUBLICATION LOCALE — un SEUL point d'attache */
     room.on(LivekitClient.RoomEvent.LocalTrackPublished,publication=>{
       if(publication.source===LivekitClient.Track.Source.Camera && publication.track){
         localCameraTrack=publication.track;
-      }
-    });
-
-    /* RECEVOIR LES DEMANDES CAMÉRA */
-    room.on(LivekitClient.RoomEvent.DataReceived,(payload,participant,kind,topic)=>{
-      try{
-        const msg=JSON.parse(new TextDecoder().decode(payload));
-        console.log("Data reçue:",msg,"de",participant?.identity);
-
-        if(msg.type==="camera-request" && participant){
-          const uid=participant.identity;
-          if(allowedCameraUids.has(uid)) return;
-
-          pendingRequests.set(uid,{
-            name:participant.name||uid,
-            participant
-          });
-
-          const tile=document.getElementById("tile-"+uid);
-          if(tile) tile.classList.add("pending");
-
-          renderRequests();
-          status("Demande caméra de "+(participant.name||uid),"wait");
-        }
-
-        if(msg.type==="camera-cancelled" && participant){
-          const uid=participant.identity;
-          if(pendingRequests.has(uid)){
-            pendingRequests.delete(uid);
-            const tile=document.getElementById("tile-"+uid);
-            if(tile) tile.classList.remove("pending");
-            renderRequests();
-          }
-        }
-      }catch(e){
-        // Data non-JSON ignorée
+        // La piste est déjà attachée plus bas, on ne réattache PAS ici.
       }
     });
 
@@ -1198,13 +1017,6 @@ async function startLive(){
       console.log("Piste reçue de",participant.identity,":",track.kind);
 
       if(track.kind===LivekitClient.Track.Kind.Video){
-        // Accepter la vidéo seulement si autorisée
-        if(!allowedCameraUids.has(participant.identity)){
-          console.warn("Vidéo non autorisée de",participant.identity,"— ignorée");
-          // On ne crée pas la vignette mais on laisse la piste (au cas où accepté après)
-          // Pour être plus strict, on peut forcer unset :
-          // publication.setSubscribed(false);
-        }
         createStudentTile(participant,track);
         updateStudentsList();
       }
@@ -1254,7 +1066,7 @@ async function startLive(){
     await room.connect(url,token);
     console.log("Connecté à la salle LiveKit");
 
-    // Prof : caméra + micro activés
+    // Publication avec presets explicites + simulcast
     await room.localParticipant.enableCameraAndMicrophone({
       camera:{
         resolution:LivekitClient.VideoPresets.h720.resolution,
@@ -1266,8 +1078,9 @@ async function startLive(){
         autoGainControl:true
       }
     });
-    console.log("Caméra et micro activés (prof)");
+    console.log("Caméra et micro activés");
 
+    // UN SEUL point d'attache de la piste caméra du prof
     const camPub=room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
     if(camPub && camPub.track){
       localCameraTrack=camPub.track;
@@ -1288,7 +1101,6 @@ async function startLive(){
     $("switchBtn").disabled=false;
 
     showProfInMain();
-    renderRequests();
 
     status("Direct en cours","ok");
     updateStudentsList();
@@ -1340,7 +1152,7 @@ function updateStudentsList(){
       .some(pub=>pub.kind==="video" && pub.track && !pub.isMuted);
 
     return `
-      <div class="student-row" data-uid="${escapeHTML(participant.identity)}">
+      <div class="student-row" onclick="window.__viewStudent('${escapeHTML(participant.identity)}')">
         <div class="student-avatar">${escapeHTML(initial)}</div>
         <div class="student-details">
           <div class="student-name">${escapeHTML(name)}</div>
@@ -1353,16 +1165,13 @@ function updateStudentsList(){
       </div>
     `;
   }).join("");
-
-  $("students").querySelectorAll(".student-row").forEach(row=>{
-    row.onclick=()=>{
-      const uid=row.dataset.uid;
-      const item=studentItems.find(t=>t.uid===uid);
-      if(item) showStudentInMain(uid);
-      else status("Cet étudiant n'a pas encore activé sa caméra.","err");
-    };
-  });
 }
+
+window.__viewStudent=function(uid){
+  const item=studentItems.find(t=>t.uid===uid);
+  if(item) showStudentInMain(uid);
+  else status("Cet étudiant n'a pas encore activé sa caméra.","err");
+};
 
 /* =========================================================
    ARRÊTER LE DIRECT
@@ -1414,17 +1223,13 @@ async function stopLive(){
   $("roomTitle").textContent="Direct de la classe";
   $("participantsPanel").classList.remove("show");
 
-  pendingRequests.clear();
-  allowedCameraUids.clear();
-  renderRequests();
-
   updateStudentsList();
   enforceVisibleLimit();
   status("Direct arrêté.");
 }
 
 /* =========================================================
-   CAMÉRA ON/OFF (prof)
+   CAMÉRA ON/OFF
    ========================================================= */
 $("cameraBtn").onclick=()=>{
   if(!room) return;
@@ -1440,7 +1245,7 @@ $("cameraBtn").onclick=()=>{
 };
 
 /* =========================================================
-   MICRO ON/OFF (prof)
+   MICRO ON/OFF
    ========================================================= */
 $("micBtn").onclick=()=>{
   if(!room) return;
@@ -1456,7 +1261,7 @@ $("micBtn").onclick=()=>{
 };
 
 /* =========================================================
-   CHANGER CAMÉRA (prof)
+   CHANGER CAMÉRA
    ========================================================= */
 async function switchCamera(){
   if(!room) return;
@@ -1533,22 +1338,9 @@ $("backToProfBtn").onclick=showProfInMain;
 $("participantsBtn").onclick=()=>{
   $("participantsPanel").classList.toggle("show");
   $("settingsPanel").classList.remove("show");
-  $("requestsPanel").classList.remove("show");
 };
 $("closeParticipantsBtn").onclick=()=>{
   $("participantsPanel").classList.remove("show");
-};
-
-/* =========================================================
-   DEMANDES CAMÉRA — UI
-   ========================================================= */
-$("requestsBtn").onclick=()=>{
-  $("requestsPanel").classList.toggle("show");
-  $("participantsPanel").classList.remove("show");
-  $("settingsPanel").classList.remove("show");
-};
-$("closeRequestsBtn").onclick=()=>{
-  $("requestsPanel").classList.remove("show");
 };
 
 /* =========================================================
@@ -1557,7 +1349,6 @@ $("closeRequestsBtn").onclick=()=>{
 $("settingsBtn").onclick=()=>{
   $("settingsPanel").classList.toggle("show");
   $("participantsPanel").classList.remove("show");
-  $("requestsPanel").classList.remove("show");
 };
 $("closeSettingsBtn").onclick=()=>{
   $("settingsPanel").classList.remove("show");
